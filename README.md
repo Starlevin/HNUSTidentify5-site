@@ -4,6 +4,8 @@
 
 https://starlevin.github.io/qinghan-site/
 
+![首页预览](docs/site-preview.jpg)
+
 ## 页面与内容
 
 - 首页：真实队徽、校队介绍、队员预览、社群入口与官方赛事链接。
