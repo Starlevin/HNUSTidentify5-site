@@ -13,9 +13,9 @@
   }
   function roleFrom(value) {
     const v=String(value||'');
-    if(/双阵营|双修/.test(v)||(/求生|人队/.test(v)&&/监管|屠/.test(v))) return 'flex';
+    if(/双阵营|双修|双边/.test(v)||(/求生|人队|人类/.test(v)&&/监管|屠/.test(v))) return 'flex';
     if(/监管|屠/.test(v)) return 'hunter';
-    if(/求生|人队/.test(v)) return 'survivor';
+    if(/求生|人队|人类/.test(v)) return 'survivor';
     return 'support';
   }
   function sanitize(input) {

@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ALLOWED = {"id", "nickname", "role", "characters", "rank", "intro"}
+ALLOWED = {"id", "nickname", "role", "characters", "rank", "intro", "alias", "survivorPeak", "hunterPeak"}
 ROLES = {"survivor", "hunter", "flex", "support"}
 PRIVATE = re.compile(r"(?:\d[\s-]*){11,}|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|身份证|手机号|学号|微信|真实姓名|联系电话|住址|(?:个人)?QQ\s*[:：]", re.I)
 
@@ -33,23 +33,38 @@ def validate_players(records):
         if not isinstance(chars, list) or len(chars) > 20 or any(not isinstance(x, str) or not 1 <= len(x.strip()) <= 40 for x in chars):
             raise ValueError(f"Record {i + 1}: invalid character pool.")
         rank, intro = record.get("rank", ""), record.get("intro", "")
+        game_extra = {key: record.get(key, "") for key in ("alias", "survivorPeak", "hunterPeak")}
+        if any(not isinstance(value, str) or len(value) > 80 for value in game_extra.values()):
+            raise ValueError(f"Record {i + 1}: invalid game alias or historical rank.")
         if not isinstance(rank, str) or len(rank) > 80 or not isinstance(intro, str) or len(intro) > 400:
             raise ValueError(f"Record {i + 1}: invalid public description.")
         if PRIVATE.search(json.dumps(record, ensure_ascii=False)):
             raise ValueError(f"Record {i + 1}: looks like private contact information; review this record.")
         seen.add(pid)
         clean.append({"id": pid, "nickname": nickname.strip(), "role": record["role"],
-                      "characters": [x.strip() for x in chars], "rank": rank.strip(), "intro": intro.strip()})
+                      "characters": [x.strip() for x in chars], "rank": rank.strip(), "intro": intro.strip(),
+                      **{key: value.strip() for key, value in game_extra.items()}})
     return clean
 
 def profile_html(template, record):
     # All generated player pages are actual HTML routes, with independent titles.
     page = template.replace('data-player-id=""', 'data-player-id="' + record["id"] + '"')
     page = page.replace("<title>队员档案", "<title>" + html.escape(record["nickname"]) + " · 队员档案")
-    for filename in ("styles.css", "app.js", "favicon.svg", "data/team-roster.js"):
+    for filename in ("styles.css", "app.js", "favicon.svg", "data/team-roster.js", "assets/team-badge.jpg", "assets/community-qr.jpg"):
         page = page.replace('"' + filename + '"', '"../../' + filename + '"')
     for filename in ("index.html", "roster.html", "join.html", "privacy.html"):
         page = page.replace('"' + filename, '"../../' + filename)
+    # Server-render the core game identity so each page is useful before JavaScript loads.
+    safe_nickname = html.escape(record["nickname"])
+    safe_alias = html.escape(record.get("alias", ""))
+    label = {"survivor": "求生者", "hunter": "监管者", "flex": "双阵营", "support": "队员"}[record["role"]]
+    summary = f'<p class="eyebrow">HNUST / {label}</p><h1>{safe_nickname}</h1>'
+    if safe_alias:
+        summary += f'<p class="lead">队内网名：{safe_alias}</p>'
+    for label, key in (("求生者 · 历史最高", "survivorPeak"), ("监管者 · 历史最高", "hunterPeak")):
+        summary += f'<p>{label}：{html.escape(record.get(key, "") or "暂未公开")}</p>'
+    summary += '<p>历史段位来自队员提供的记录，不代表当前赛季段位。</p>'
+    page = page.replace('<!-- PROFILE_FALLBACK -->', summary)
     return page
 
 def build():
