@@ -7,7 +7,7 @@
 | manor-background.jpg | https://www.identityvgame.com/pc/gw/20210609113612/img/bg1_1c00563.jpg |
 | manor-hall.jpg | https://www.identityvgame.com/pc/gw/20210609113612/img/bg2_95b8256.jpg |
 | character-scene.jpg | https://www.identityvgame.com/pc/gw/20210609113612/img/bg3_f673a46.jpg |
-| game-logo.png | https://www.identityvgame.com/pc/gw/20210609113612/img/logo3_7742f0c.png |
+| game-logo.png | https://www.identityvgame.com/pc/gw/20210609113612/img/logo2_3d2faff.png |
 | mercenary.png | https://r.res.easebar.com/pic/20210615/789193af-8452-4de7-a915-508121b39a6d.png |
 | bloody-queen.png | https://r.res.easebar.com/pic/20210615/41e145ae-eaa0-44a3-bfad-d5ea792e4ef6.png |
 
