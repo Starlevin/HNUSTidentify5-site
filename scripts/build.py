@@ -50,9 +50,9 @@ def profile_html(template, record):
     # All generated player pages are actual HTML routes, with independent titles.
     page = template.replace('data-player-id=""', 'data-player-id="' + record["id"] + '"')
     page = page.replace("<title>队员档案", "<title>" + html.escape(record["nickname"]) + " · 队员档案")
-    for filename in ("styles.css", "app.js", "favicon.svg", "data/team-roster.js", "assets/team-badge.jpg", "assets/community-qr.jpg"):
-        page = page.replace('"' + filename + '"', '"../../' + filename + '"')
-    for filename in ("index.html", "roster.html", "join.html", "privacy.html"):
+    for filename in ("styles.css", "app.js", "favicon.svg", "data/team-roster.js", "assets/"):
+        page = page.replace('"' + filename, '"../../' + filename)
+    for filename in ("index.html", "roster.html", "join.html", "privacy.html", "sources.html"):
         page = page.replace('"' + filename, '"../../' + filename)
     # Server-render the core game identity so each page is useful before JavaScript loads.
     safe_nickname = html.escape(record["nickname"])
@@ -75,7 +75,7 @@ def build():
     out.mkdir()
     # Only listed public files go into the hosted artifact. No source workbook or uploads.
     for name in ("index.html", "roster.html", "join.html", "privacy.html", "player.html",
-                 "404.html", "styles.css", "app.js", "favicon.svg", ".nojekyll", "robots.txt"):
+                 "404.html", "sources.html", "styles.css", "app.js", "favicon.svg", ".nojekyll", "robots.txt"):
         shutil.copyfile(ROOT / name, out / name)
     (out / "data").mkdir()
     public_json = json.dumps(players, ensure_ascii=True, indent=2)
@@ -97,6 +97,13 @@ def build():
                 if source.stat().st_size > 12 * 1024 * 1024:
                     raise ValueError("An image exceeds the site asset size limit.")
                 shutil.copyfile(source, out / "assets" / source.name)
+    game_art = ("manor-background.jpg", "manor-hall.jpg", "character-scene.jpg", "game-logo.png", "mercenary.png", "bloody-queen.png")
+    (out / "assets/game").mkdir()
+    for name in game_art:
+        source = ROOT / "assets/game" / name
+        if not source.is_file() or source.stat().st_size > 12 * 1024 * 1024:
+            raise ValueError("An official artwork is missing or exceeds the site asset size limit.")
+        shutil.copyfile(source, out / "assets/game" / name)
     print(f"Static build complete: {len(players)} curated public player profiles.")
     return out
 

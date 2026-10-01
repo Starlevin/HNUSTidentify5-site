@@ -61,7 +61,7 @@ class PublicRosterTests(unittest.TestCase):
         page = profile_html(template, record)
         self.assertIn('data-player-id="p0001"', page)
         self.assertIn("&lt;game&amp;nickname&gt;", page)
-        self.assertIn('src="../../app.js"', page)
+        self.assertIn('src="../../app.js?', page)
         self.assertIn('src="../../data/team-roster.js"', page)
         self.assertIn('href="../../roster.html"', page)
 

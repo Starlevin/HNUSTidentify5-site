@@ -10,6 +10,30 @@
   document.addEventListener('click', e => { if (nav && !nav.contains(e.target) && !toggle?.contains(e.target)) closeMenu(); });
   window.matchMedia('(min-width:761px)').addEventListener('change', e => { if (e.matches) closeMenu(); });
   document.querySelectorAll('[data-year]').forEach(e => { e.textContent = new Date().getFullYear(); });
+  const manorTabs = [...document.querySelectorAll('.manor-tabs [role="tab"]')];
+  function selectManorTab(index, focus = false) {
+    manorTabs.forEach((tab, i) => {
+      const active = i === index;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+      const panel = document.getElementById(tab.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !active;
+    });
+    if (focus) manorTabs[index].focus();
+  }
+  manorTabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => selectManorTab(index));
+    tab.addEventListener('keydown', event => {
+      let next;
+      if (event.key === 'ArrowRight') next = (index + 1) % manorTabs.length;
+      else if (event.key === 'ArrowLeft') next = (index + manorTabs.length - 1) % manorTabs.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = manorTabs.length - 1;
+      else return;
+      event.preventDefault();
+      selectManorTab(next, true);
+    });
+  });
   document.querySelector('[data-copy-group]')?.addEventListener('click', async () => {
     const status = document.querySelector('[data-copy-status]');
     try { await navigator.clipboard.writeText('648418715'); status.textContent = '群号已复制，在 QQ 中搜索即可。'; }
