@@ -1,6 +1,7 @@
 """Build a static team site from deliberately curated public fields only."""
 import html
 import json
+import os
 import re
 import shutil
 from pathlib import Path
@@ -68,6 +69,10 @@ def profile_html(template, record):
     return page
 
 def build():
+    repository = os.environ.get("GITHUB_REPOSITORY", "Starlevin/qinghan-site")
+    base_path = os.environ.get("SITE_BASE_PATH", "/" + repository.rsplit("/", 1)[-1]).rstrip("/")
+    if base_path and not re.fullmatch(r"/[A-Za-z0-9_.-]+", base_path):
+        raise ValueError("Invalid site base path.")
     players = validate_players(json.loads((ROOT / "data/team-roster.json").read_text(encoding="utf-8")))
     out = ROOT / "dist"
     if out.exists():
@@ -77,6 +82,11 @@ def build():
     for name in ("index.html", "roster.html", "join.html", "privacy.html", "player.html",
                  "404.html", "sources.html", "styles.css", "app.js", "favicon.svg", ".nojekyll", "robots.txt"):
         shutil.copyfile(ROOT / name, out / name)
+    # Error pages need absolute links at any depth. Derive the repository prefix
+    # at build time so renaming the repository does not leave old asset paths.
+    for name in ("404.html", "robots.txt"):
+        target = out / name
+        target.write_text(target.read_text(encoding="utf-8").replace("/qinghan-site/", base_path + "/"), encoding="utf-8")
     (out / "data").mkdir()
     public_json = json.dumps(players, ensure_ascii=True, indent=2)
     (out / "data/team-roster.js").write_text("window.HNUST_ROSTER = " + public_json + ";\n", encoding="utf-8")
@@ -89,6 +99,8 @@ def build():
     (out / "tools").mkdir()
     for name in ("roster-editor.html", "roster-editor.js", "public-fields.js"):
         shutil.copyfile(ROOT / "tools" / name, out / "tools" / name)
+    editor = out / "tools/roster-editor.html"
+    editor.write_text(editor.read_text(encoding="utf-8").replace("github.com/Starlevin/qinghan-site/", "github.com/" + repository + "/"), encoding="utf-8")
     (out / "assets").mkdir()
     for name in ("team-badge", "community-qr"):
         for suffix in (".jpg", ".png", ".webp"):

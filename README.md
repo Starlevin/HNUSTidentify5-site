@@ -1,8 +1,8 @@
 # HNUST 第五人格校队介绍站
 
-湖南科技大学第五人格校队与社群介绍网站，部署于 GitHub Pages。
+湖南科技大学第五人格校队与社群介绍网站，公开网站已迁移至免费校队网址。GitHub 保留源代码和 Pages 备用部署。
 
-https://starlevin.github.io/qinghan-site/
+https://hnust-identityv.levinluo2005.chatgpt.site
 
 ![首页预览](docs/landscape-preview.jpg)
 
@@ -66,3 +66,9 @@ python -m http.server 8000 --directory dist
 - IVL 联赛官网：https://ivl.163.com/
 
 学校官网链接不表示学校管理或背书本站。没有可核实的队伍战绩，因此不填成绩、赛事名次或建队日期。
+
+## 地址迁移与仓库改名
+
+公开网站地址使用 `hnust-identityv`，网站访问不依赖 GitHub 仓库名称。当前 GitHub 仓库仍为 `Starlevin/qinghan-site`；计划改名为 `hnust-identityv`。仓库设置改名后，重新运行 Pages 工作流即可更新备用站的路径，构建会自动读取 `GITHUB_REPOSITORY`。
+
+在根域名托管时，使用 `SITE_BASE_PATH=/ python scripts/build.py`，把生成的 `dist` 作为静态网站目录。正式站更新时需同步其托管版本；GitHub Pages 工作流仅更新备用站。
