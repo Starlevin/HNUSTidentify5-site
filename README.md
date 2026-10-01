@@ -4,7 +4,7 @@
 
 https://starlevin.github.io/qinghan-site/
 
-![首页预览](docs/site-preview.jpg)
+![首页预览](docs/landscape-preview.jpg)
 
 ## 页面与内容
 
