@@ -1,3 +1,10 @@
 dist/
 __pycache__/
-*.pyc
+node_modules/
+.dev.vars
+.env
+.env.*
+.wrangler/
+!.env.example
+.cloudflare-deploy.json
+*.sql.backup

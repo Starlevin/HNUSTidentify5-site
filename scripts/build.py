@@ -51,9 +51,9 @@ def profile_html(template, record):
     # All generated player pages are actual HTML routes, with independent titles.
     page = template.replace('data-player-id=""', 'data-player-id="' + record["id"] + '"')
     page = page.replace("<title>队员档案", "<title>" + html.escape(record["nickname"]) + " · 队员档案")
-    for filename in ("styles.css", "app.js", "favicon.svg", "data/team-roster.js", "assets/"):
+    for filename in ("styles.css", "app.js", "account.html", "account.js", "account.css", "matches.html", "matches.js", "favicon.svg", "data/team-roster.js", "assets/"):
         page = page.replace('"' + filename, '"../../' + filename)
-    for filename in ("index.html", "roster.html", "join.html", "privacy.html", "sources.html"):
+    for filename in ("index.html", "roster.html", "join.html", "privacy.html", "sources.html", "account.html"):
         page = page.replace('"' + filename, '"../../' + filename)
     # Server-render the core game identity so each page is useful before JavaScript loads.
     safe_nickname = html.escape(record["nickname"])
@@ -80,7 +80,7 @@ def build():
     out.mkdir()
     # Only listed public files go into the hosted artifact. No source workbook or uploads.
     for name in ("index.html", "roster.html", "join.html", "privacy.html", "player.html",
-                 "404.html", "sources.html", "styles.css", "app.js", "favicon.svg", ".nojekyll", "robots.txt"):
+                 "404.html", "sources.html", "styles.css", "app.js", "account.html", "account.js", "account.css", "matches.html", "matches.js", "favicon.svg", ".nojekyll", "robots.txt"):
         shutil.copyfile(ROOT / name, out / name)
     # Error pages need absolute links at any depth. Derive the repository prefix
     # at build time so renaming the repository does not leave old asset paths.

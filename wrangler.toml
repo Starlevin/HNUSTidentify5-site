@@ -1,0 +1,16 @@
+
+name = "hnust-identityv-accounts"
+main = "worker/index.mjs"
+compatibility_date = "2026-05-15"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = ["/api/*", "/data/*", "/players/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hnust-identityv-accounts"
+# Replace with the actual D1 database ID before using Wrangler deployment.
+database_id = "00000000-0000-4000-8000-000000000000"
+migrations_dir = "migrations"
