@@ -1,8 +1,10 @@
+import { handleMatches } from './matches.mjs';
 import { handleAccount } from './auth.mjs';
 import legacyRoster from './roster.mjs';
 export default {
   async fetch(request, env) {
     const url = new URL(request.url), path = url.pathname;
+    if (path.startsWith('/api/matches/')) return handleMatches(request, env);
     if (path.startsWith('/api/account/')) return handleAccount(request, env);
     if (/^\/players\/p[0-9]{4,8}\/?(?:index\.html)?$/.test(path)) {
       const id = path.split('/')[2];

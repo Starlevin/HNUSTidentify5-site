@@ -63,9 +63,14 @@ export async function handleAccount(request, env) {
         return json({ member: user, profile: { ...JSON.parse(profile.public_json), id: user.player_id, published: Boolean(profile.published) }, privateProfile: { ...JSON.parse(profile.private_json), consent: Boolean(profile.consent) } });
       }
       if (path === 'directory') {
+        admin(user);
         const rows = await stmt(db, 'SELECT u.player_id,p.public_json,p.private_json FROM account_profiles p JOIN account_users u ON u.id=p.user_id WHERE u.active=1 AND p.consent=1').all();
         await audit(db, user.id, 'read_directory', 'team');
         return json({ rows: rows.results.map(p => ({ id: p.player_id, nickname: JSON.parse(p.public_json).nickname, ...JSON.parse(p.private_json) })) });
+      }
+      if (path === 'audit') {
+        admin(user, true);
+        return json({ rows: (await stmt(db, 'SELECT a.id,u.username,a.action,a.target,a.created FROM account_audit a LEFT JOIN account_users u ON u.id=a.actor ORDER BY a.id DESC LIMIT 100').all()).results });
       }
       if (path === 'admin') {
         admin(user);
@@ -99,7 +104,7 @@ export async function handleAccount(request, env) {
       const salt = randomToken(16);
       const hashed = await passwordHash(secret, salt, env.AUTH_PEPPER);
       const claim = randomToken();
-      let playerId = bootstrap ? 'p0001' : invite?.player_id || 'p' + String(1000000 + (await stmt(db, 'SELECT coalesce(max(id),0)+1 AS next FROM account_users').first()).next);
+      let playerId = (!bootstrap && invite?.player_id) || 'p' + String(1000000 + (await stmt(db, 'SELECT coalesce(max(id),0)+1 AS next FROM account_users').first()).next);
       // The unique player_id guard and the conditional invitation claim make races fail closed.
       const existingProfile = legacyRoster.find(p => p.id === playerId); const profile = publicProfile({ ...existingProfile, nickname: text(body.nickname,32) || existingProfile?.nickname || name, role: existingProfile?.role || 'survivor' });
       const queries = [];
@@ -138,7 +143,7 @@ export async function handleAccount(request, env) {
     }
     if (path === 'private') {
       const profile = privateProfile(body);
-      if (body.consent !== true && Object.values(profile).some(Boolean)) throw new HttpError(400, '请确认资料对所有已激活队员可见，或清空资料后撤回共享');
+      if (body.consent !== true && Object.values(profile).some(Boolean)) throw new HttpError(400, '请确认资料可由管理员查看，或清空资料后撤回提交');
       await stmt(db, 'UPDATE account_profiles SET private_json=?,consent=? WHERE user_id=?', JSON.stringify(profile), body.consent === true ? 1 : 0, user.id).run();
       await audit(db, user.id, 'edit_private', user.player_id);
       return json({ ok: true });
@@ -152,11 +157,17 @@ export async function handleAccount(request, env) {
       if (playerId && !/^p[0-9]{4,8}$/.test(playerId)) throw new HttpError(400, '档案编号不正确');
       if (playerId && await stmt(db, 'SELECT id FROM account_users WHERE player_id=?', playerId).first()) throw new HttpError(409, '该档案已绑定账号');
       const code = 'HNUST-' + randomToken();
-      await stmt(db, 'INSERT INTO account_invites(hash,label,role,player_id,expires,created) VALUES(?,?,?,?,?,?)', await digest(code), text(body.label,80) || '入队邀请', role, playerId, Date.now() + 7 * 86400000, Date.now()).run();
+      const days = body.days === undefined ? 7 : Number(body.days);
+      if (!Number.isInteger(days) || days < 1 || days > 30) throw new HttpError(400, '有效期须为 1–30 天');
+      await stmt(db, 'INSERT INTO account_invites(hash,label,role,player_id,expires,created) VALUES(?,?,?,?,?,?)', await digest(code), text(body.label,80) || '入队邀请', role, playerId, Date.now() + days * 86400000, Date.now()).run();
+      await audit(db, user.id, 'create_invite', role);
       return json({ code }, 201);
     }
     if (path === 'revoke') {
+      const invitation = await stmt(db, 'SELECT role FROM account_invites WHERE hash=?', text(body.hash,64)).first();
+      if (invitation?.role === 'admin') admin(user, true);
       await stmt(db, 'UPDATE account_invites SET revoked=1 WHERE hash=? AND used_by IS NULL', text(body.hash,64)).run();
+      await audit(db, user.id, 'revoke_invite', 'invitation');
       return json({ ok: true });
     }
     if (path === 'member') {

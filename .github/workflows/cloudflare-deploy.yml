@@ -1,0 +1,29 @@
+name: Deploy free Cloudflare team platform
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hnust-cloudflare-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: cloudflare-production
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:auth
+      - run: python -m unittest discover -s scripts -p test_public.py -v
+      - run: SITE_BASE_PATH=/ python scripts/build.py
+      - name: Create database, migrate, configure secrets and deploy
+        run: node scripts/deploy-cloudflare.mjs
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          AUTH_PEPPER: ${{ secrets.AUTH_PEPPER }}
+          ADMIN_SETUP_TOKEN: ${{ secrets.ADMIN_SETUP_TOKEN }}

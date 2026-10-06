@@ -44,13 +44,14 @@ async function refresh() {
     $('member-heading').textContent = (me.profile.nickname || me.member.username) + ' · ' + ({ owner: '队长 / 超级管理员', admin: '管理员', player: '队员' }[me.member.role]);
     $('profile-form').reset(); $('private-form').reset(); populate($('profile-form'), me.profile); populate($('private-form'), me.privateProfile);
     $('my-profile').href = new URL('player.html?id=' + encodeURIComponent(me.member.player_id), apiBase).href;
+    $('directory-tab').hidden = !['owner', 'admin'].includes(me.member.role);
     $('admin-tab').hidden = !['owner', 'admin'].includes(me.member.role);
     $('invite-admin-option').hidden = me.member.role !== 'owner';
     $('invite-admin-option').disabled = me.member.role !== 'owner';
     status('已登录。公开主页与队内资料分别保存。');
   } else {
     ['profile-form','private-form','password-form','invite-form'].forEach(id=>$(id).reset());
-    ['directory-list','admin-members','admin-invites'].forEach(id=>$(id).replaceChildren());
+    ['directory-list','admin-members','admin-invites','audit-list'].forEach(id=>$(id).replaceChildren());
     $('invite-result').hidden=true;inviteCode='';$('invite-code').textContent='';
     status('使用校队自己的用户名和密码登录。首次注册需要邀请码。');
   }
@@ -84,6 +85,12 @@ async function renderAdmin() {
       role.addEventListener('click', () => { if (confirm('确认更改 ' + m.username + ' 的管理员权限？')) act(async () => { await api('member',{id:m.id,active:Boolean(m.active),role:m.role==='admin'?'player':'admin'}); await renderAdmin(); status('权限已更新。'); }); });
       row.append(disable, role);
     } $('admin-members').append(row);
+  }
+  $('audit-area').hidden = me.member.role !== 'owner';
+  $('audit-list').replaceChildren();
+  if (me.member.role === 'owner') {
+    const log = await api('audit');
+    for (const row of log.rows) $('audit-list').append(el('p', new Date(row.created).toLocaleString() + ' · ' + (row.username || '系统') + ' · ' + row.action + ' · ' + row.target, 'account-note'));
   }
   $('admin-invites').replaceChildren();
   for (const i of data.invitations) {

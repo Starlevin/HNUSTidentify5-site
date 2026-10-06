@@ -7,9 +7,12 @@
     "node": ">=24"
   },
   "scripts": {
-    "test:auth": "node --test tests/auth.test.mjs"
+    "test:auth": "node --test tests/*.test.mjs",
+    "build": "SITE_BASE_PATH=/ python scripts/build.py",
+    "deploy:cloudflare": "node scripts/deploy-cloudflare.mjs"
   },
   "devDependencies": {
-    "miniflare": "4.20260515.0"
+    "miniflare": "4.20260515.0",
+    "wrangler": "4.147.0"
   }
 }

@@ -32,7 +32,7 @@ test('independent accounts enforce invitations, sessions, ownership and member p
     assert.equal(result.status,201);cookies.owner=result.cookie;
     assert.match(result.set,/HttpOnly/);assert.match(result.set,/Secure/);assert.match(result.set,/SameSite=Strict/);assert.match(result.cookie,/^__Host-/);
     const owner=(await request('me',undefined,cookies.owner)).data.member;
-    assert.equal(owner.role,'owner');assert.equal(owner.player_id,'p0001');
+    assert.equal(owner.role,'owner');assert.equal(owner.player_id,'p1000001');
     const raw=await db.prepare('SELECT * FROM account_users WHERE id=?').bind(owner.id).first();
     assert.notEqual(raw.password_hash,pw);assert.equal(raw.salt.length,32);
     assert.equal((await request('register',{username:'second_owner',password:pw,nickname:'第二队长',code:'test-only-bootstrap-012345678901234567890123456789'})).status,400);
@@ -52,6 +52,7 @@ test('independent accounts enforce invitations, sessions, ownership and member p
     assert.equal((await request('private',{user_id:owner.id,realName:'Alice Secret',contact:'private-contact',consent:true},cookies.alice)).status,200);
     const publicData=(await request('profiles')).data;assert.ok(!JSON.stringify(publicData).includes('private-contact'));assert.ok(!JSON.stringify(publicData).includes('password_hash'));
     assert.equal((await request('directory',undefined,cookies.owner)).data.rows[0].contact,'private-contact');
+    assert.equal((await request('directory',undefined,cookies.alice)).status,403);
     assert.equal((await request('private',{realName:'CSRF',consent:true},cookies.alice,'https://evil.test')).status,403);
     assert.equal((await request('private',{realName:'No consent',consent:false},cookies.alice)).status,400);
     assert.equal((await request('private',{consent:false},cookies.alice)).status,200);

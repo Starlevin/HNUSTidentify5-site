@@ -20,10 +20,13 @@ jobs:
           node --check worker/credentials.mjs
           node --check worker/auth.mjs
           node --check worker/index.mjs
+          node --check worker/matches.mjs
+          node --check matches.js
+          node --check scripts/deploy-cloudflare.mjs
           node --check account.js
           node --check app.js
       - name: Install isolated Worker test runtime
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Account and permission integration checks
         run: npm run test:auth
       - name: Existing public-data checks
