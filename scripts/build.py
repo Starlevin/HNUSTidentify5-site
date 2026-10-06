@@ -80,7 +80,7 @@ def build():
     out.mkdir()
     # Only listed public files go into the hosted artifact. No source workbook or uploads.
     for name in ("index.html", "roster.html", "join.html", "privacy.html", "player.html",
-                 "404.html", "sources.html", "styles.css", "app.js", "favicon.svg", ".nojekyll", "robots.txt"):
+                 "404.html", "sources.html", "styles.css", "app.js", "account.html", "account.js", "account.css", "favicon.svg", ".nojekyll", "robots.txt"):
         shutil.copyfile(ROOT / name, out / name)
     # Error pages need absolute links at any depth. Derive the repository prefix
     # at build time so renaming the repository does not leave old asset paths.

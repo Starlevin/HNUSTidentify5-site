@@ -48,7 +48,12 @@ async function refresh() {
     $('invite-admin-option').hidden = me.member.role !== 'owner';
     $('invite-admin-option').disabled = me.member.role !== 'owner';
     status('已登录。公开主页与队内资料分别保存。');
-  } else status('使用校队自己的用户名和密码登录。首次注册需要邀请码。');
+  } else {
+    ['profile-form','private-form','password-form','invite-form'].forEach(id=>$(id).reset());
+    ['directory-list','admin-members','admin-invites'].forEach(id=>$(id).replaceChildren());
+    $('invite-result').hidden=true;inviteCode='';$('invite-code').textContent='';
+    status('使用校队自己的用户名和密码登录。首次注册需要邀请码。');
+  }
 }
 async function showPanel(id) {
   ['profile-panel','private-panel','directory-panel','password-panel','admin-panel'].forEach(name => { $(name).hidden = name !== id; });
