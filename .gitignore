@@ -1,3 +1,7 @@
 dist/
 __pycache__/
-*.pyc
+node_modules/
+.dev.vars
+.env
+.env.*
+.wrangler/

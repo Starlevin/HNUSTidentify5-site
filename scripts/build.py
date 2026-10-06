@@ -51,9 +51,9 @@ def profile_html(template, record):
     # All generated player pages are actual HTML routes, with independent titles.
     page = template.replace('data-player-id=""', 'data-player-id="' + record["id"] + '"')
     page = page.replace("<title>队员档案", "<title>" + html.escape(record["nickname"]) + " · 队员档案")
-    for filename in ("styles.css", "app.js", "favicon.svg", "data/team-roster.js", "assets/"):
+    for filename in ("styles.css", "app.js", "account.html", "account.js", "account.css", "favicon.svg", "data/team-roster.js", "assets/"):
         page = page.replace('"' + filename, '"../../' + filename)
-    for filename in ("index.html", "roster.html", "join.html", "privacy.html", "sources.html"):
+    for filename in ("index.html", "roster.html", "join.html", "privacy.html", "sources.html", "account.html"):
         page = page.replace('"' + filename, '"../../' + filename)
     # Server-render the core game identity so each page is useful before JavaScript loads.
     safe_nickname = html.escape(record["nickname"])

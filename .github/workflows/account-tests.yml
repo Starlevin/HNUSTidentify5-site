@@ -1,0 +1,37 @@
+
+name: Independent account checks
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["codex/independent-team-accounts"]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Syntax check
+        run: |
+          node --check worker/credentials.mjs
+          node --check worker/auth.mjs
+          node --check worker/index.mjs
+          node --check account.js
+          node --check app.js
+      - name: Install isolated Worker test runtime
+        run: npm install --no-audit --no-fund
+      - name: Account and permission integration checks
+        run: npm run test:auth
+      - name: Existing public-data checks
+        run: python -m unittest discover -s scripts -p test_public.py -v
+      - name: Build public site
+        run: SITE_BASE_PATH=/ python scripts/build.py
+      - name: Check account assets are included
+        run: |
+          test -f dist/account.html
+          test -f dist/account.js
+          test -f dist/account.css

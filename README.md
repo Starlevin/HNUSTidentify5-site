@@ -1,74 +1,65 @@
 # HNUST 第五人格校队介绍站
 
-湖南科技大学第五人格校队与社群介绍网站，公开网站已迁移至免费校队网址。GitHub 保留源代码和 Pages 备用部署。
+湖南科技大学第五人格校队与社群介绍网站。GitHub 仓库：Starlevin/HNUSTidentify5-site。
 
-https://hnust-identityv.levinluo2005.chatgpt.site
+当前正式地址：https://hnust-identityv.levinluo2005.chatgpt.site
 
-![首页预览](docs/landscape-preview.jpg)
+> 本分支为独立账号候选版本。GitHub 仓库当前是静态展示版，不包含正式站上一版的 Vinext 源代码。合并此代码不会自动替换正式站的 ChatGPT 登录，必须完成后端部署和源代码同步。
 
-## 页面与内容
+## 独立账号
 
-- 首页：真实队徽、校队介绍、队员预览、社群入口与官方赛事链接。
-- 队员目录：16 份游戏档案，按主玩阵营筛选，搜索游戏昵称或队内网名。
-- 独立档案：构建时生成 `players/p0001/` 至 `players/p0016/`，分别显示求生者、监管者历史最高段位。
-- 加入我们：日常游戏交流、选拔路径、社群二维码原图和公开群号。
-- 公开资料说明：展示范围、历史段位说明与更正方式。
-- 美术来源：官方游戏场景、佣兵与红夫人立绘及版权来源。
-- 首页庄园介绍：求生者与监管者视角可用鼠标和键盘切换。
+- 队员用网站自己的用户名和密码登录，不依赖 ChatGPT 账号。
+- 注册必须提供一次性邀请码，有效期7天。管理员可撤销未使用的邀请码。
+- 密码以服务端 HMAC pepper 预处理，再经独立随机盐的 PBKDF2-SHA256 散列，数据库不保存明文密码。AUTH_PEPPER 必须为不少于32字符的高熵秘密值。
+- 登录会话通过 __Host-hnust_session Cookie 保存，设置 HttpOnly、Secure、SameSite=Strict。数据库只保存会话令牌散列，有效期7天。
+- 写请求检查同源 Origin，提交体限制16KB。用户名与IP登录尝试受服务端速率限制。
+- 修改密码会使全部已有会话失效，停用或更改账号权限也会注销该账号的所有会话。
+- 每位成员只可修改自己的公开主页和队内资料。
+- 所有有效成员可在登录后查看确认共享的队内资料；公开主页响应永远不包含队内联系方式。
+- 管理员可发放队员邀请码。队长可邀请其他管理员、升降权限及停用账号。
 
-电脑横屏使用左右双栏首屏，内容宽度最多 1600px；1920px 及以上的队员目录使用六列。窄屏与手机横屏按可用宽度、方向和高度调整，不强制拉伸或裁切正文。
+队员空间入口是 account.html。纯 GitHub Pages 没有服务端账号能力，该页面会明确提示未接入账号服务，不会用浏览器存储模拟登录。
 
-素材来源详见 [官方美术清单](assets/game/README.md)。
+## 数据与原有档案
 
-资料来自维护者提供的收集表：6 位主玩求生者、5 位主玩监管者、5 位双阵营。原表没有擅长角色、战绩或确切比赛位置，因此不自行补写这些内容。历史段位保留原表记录，不表示当前赛季段位。
+原来的16份公开游戏档案、队徽、群二维码、官方素材与静态 Pages 构建保留。邀请码可绑定已有档案编号，避免其他成员自行认领。队长通过一次性管理初始化邀请码注册，绑定现有 p0001 档案；原有游戏字段保留。
 
-## 公开数据边界
+公开字段为昵称、队内称呼、阵营、历史段位、角色池、介绍、主题与已收录立绘。公开主页会拒绝疑似私人联系方式。真实姓名、个人联系方式、学院、年级、游戏ID、训练时间和备注只保存到服务端私密字段。队内字段均选填，保存前确认向有效成员共享；清空字段并取消共享可以撤回。
 
-原始 Excel 不进入此仓库或部署产物。真实姓名、身份证号、手机号、个人 QQ、游戏 UID、学号、住址等私人字段不得提交，包括隐藏字段、源文件和附件。
+worker/roster.mjs 是现有公开档案的服务端副本。修改 data/team-roster.json 后需要同步此副本。原始 Excel、私人资料、密码、初始化邀请码与部署秘密均不得提交到仓库。
 
-`data/team-roster.json` 采用严格白名单：
+## 构建和验证
 
-| 字段 | 用途 |
-| --- | --- |
-| id | 网站档案编号，不使用游戏账号 |
-| nickname | 游戏昵称 |
-| alias | 明确标注的队内网名 |
-| role | survivor / hunter / flex / support |
-| survivorPeak | 求生者历史最高段位 |
-| hunterPeak | 监管者历史最高段位 |
-| characters | 经确认可公开的角色池，目前为空 |
-| rank | 兼容旧版的主要阵营历史段位 |
-| intro | 经确认可公开的游戏介绍，目前为空 |
+使用 Node 24 与 Python 3：
 
-只保留这些字段。构建会拒绝额外字段、联系方式、长号码及不合法编号；人工检查仍然必要。社群群号 648418715 是维护者明确提供的入群入口，与成员个人联系方式不同。
+- npm install
+- npm run test:auth
+- python -m unittest discover -s scripts -p test_public.py -v
+- SITE_BASE_PATH=/ python scripts/build.py
 
-## 维护
+独立账号工作流在分支推送及PR时运行：JavaScript语法检查、真实 Workers/Miniflare + D1 权限集成测试、原有隐私白名单测试、静态构建检查。不依赖真实用户数据或生产秘密。
 
-直接更新公开 JSON，然后执行构建。`data/team-roster.js` 是源文件本地预览用副本；正式部署时由 JSON 自动生成。更改昵称、历史段位时同步这两个源文件。不要把原表放进项目目录。
+## 托管要求
 
-保留的 `tools/roster-editor.html` 只在浏览器中提取基础游戏字段，是旧版的辅助工具；它不保留新增的网名和两个阵营历史段位，完整更新请编辑公开 JSON。原表不向服务器上传。工具导出后必须人工审查。
+worker/index.mjs 是 Cloudflare Workers-compatible ESM 入口，DB 为D1绑定，ASSETS 为 dist 的静态资产绑定。migrations/0001_independent_accounts.sql 是新增的 account_* 表，与正式站原先的表名区分开。不要在运行时自动创建表。
 
-## 本地检查与部署
+wrangler.toml 中的数据库ID是显式占位值；本仓库未配置真实 Cloudflare 账户、数据库或部署凭据。已有平台的资源ID必须通过托管平台获取，不能推导或猜测。
 
-```sh
-python -m unittest discover -s scripts -p test_public.py -v
-python scripts/build.py
-python -m http.server 8000 --directory dist
-```
+启用前由网站维护者配置：
+1. 将 DB 绑定至实际数据库，并先应用新增迁移。
+2. 通过托管平台秘密变量设置 AUTH_PEPPER 和 ADMIN_SETUP_TOKEN，均使用独立的高熵随机值，不能放入网页或GitHub。
+3. 通过同源 HTTPS 托管 worker 与 dist；将所有 /api/account/* 请求交给 worker。
+4. 维护者用 ADMIN_SETUP_TOKEN 作为第一次注册的邀请码，建立队长账户。建成后该初始化邀请码即使再次提交也不能创建第二个队长，随后删除此秘密变量。
+5. 队长分别生成两个管理员邀请码，交给实际管理员自行设置用户名和密码，再为已有队员绑定对应档案生成邀请。
 
-构建生成 16 个独立 HTML 页面，并仅复制允许的公开文件、两张维护者提供的图片和六张官方美术。GitHub Actions 在 main 更新后自动测试、构建和发布 dist。支持桌面横屏、超宽屏、手机竖屏与横屏排版、键盘操作和减少动画偏好；游戏信息通过 textContent 渲染。
+先在隔离环境验证，再更新正式站。不要只发布静态页面而声称账号功能已启用，也不要把本候选分支当作已经部署的正式版本。正式站源码和数据库中的已有账号/资料需要另行核对并按绑定的档案迁移，不能直接丢弃。
 
-## 来源
+## 美术来源
 
-- 队徽、社群二维码与游戏资料：维护者提供。
-- 学校名称与校训：https://www.hnust.edu.cn/
-- 第五人格官网：https://www.identity-v.com/
-- IVL 联赛官网：https://ivl.163.com/
+已有官方佣兵、红夫人立绘可用于选手主页。游戏美术 © 网易 / Joker Studio，详见 assets/game/README.md。全角色立绘尚未补齐。
 
-学校官网链接不表示学校管理或背书本站。没有可核实的队伍战绩，因此不填成绩、赛事名次或建队日期。
+学校官网：https://www.hnust.edu.cn/  
+第五人格官网：https://www.identity-v.com/  
+IVL联赛官网：https://ivl.163.com/
 
-## 地址迁移与仓库改名
-
-公开网站地址使用 `hnust-identityv`，网站访问不依赖 GitHub 仓库名称。当前 GitHub 仓库仍为 `Starlevin/qinghan-site`；计划改名为 `hnust-identityv`。仓库设置改名后，重新运行 Pages 工作流即可更新备用站的路径，构建会自动读取 `GITHUB_REPOSITORY`。
-
-在根域名托管时，使用 `SITE_BASE_PATH=/ python scripts/build.py`，把生成的 `dist` 作为静态网站目录。正式站更新时需同步其托管版本；GitHub Pages 工作流仅更新备用站。
+本站为校队社群介绍网站，不表示学校或游戏官方授权。

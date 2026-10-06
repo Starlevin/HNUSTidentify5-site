@@ -1,4 +1,4 @@
-(() => {
+(async () => {
   'use strict';
   const base = new URL('./', document.currentScript.src);
   const nav = document.querySelector('#navigation');
@@ -40,16 +40,24 @@
     catch { status.textContent = '请长按复制群号：648418715'; }
   });
   const roleNames = { survivor: '求生者', hunter: '监管者', flex: '双阵营', support: '队员' };
-  const fields = ['id', 'nickname', 'alias', 'role', 'characters', 'rank', 'survivorPeak', 'hunterPeak', 'intro'];
+  const fields = ['id', 'nickname', 'alias', 'role', 'characters', 'rank', 'survivorPeak', 'hunterPeak', 'intro', 'theme', 'featured'];
   const suspicious = /(?:\d[\s-]*){11,}|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|身份证|手机号|学号|微信|真实姓名|联系电话|住址|(?:个人)?QQ\s*[:：]/i;
   function isPublic(p) { return p && Object.keys(p).every(k => fields.includes(k)) && /^p[0-9]{4,8}$/.test(p.id) && typeof p.nickname === 'string' && p.nickname.length > 0 && p.nickname.length <= 32 && !/^\d+$/.test(p.nickname) && Object.hasOwn(roleNames, p.role) && Array.isArray(p.characters) && p.characters.every(c => typeof c === 'string' && c.length <= 40) && ['alias', 'rank', 'survivorPeak', 'hunterPeak', 'intro'].every(k => p[k] === undefined || typeof p[k] === 'string') && !suspicious.test(JSON.stringify(p)); }
-  const players = (Array.isArray(window.HNUST_ROSTER) ? window.HNUST_ROSTER : []).filter(isPublic);
+  let players = (Array.isArray(window.HNUST_ROSTER) ? window.HNUST_ROSTER : []).filter(isPublic);
+  try {
+    const response = await fetch(new URL('api/account/profiles', base));
+    if (response.ok && (response.headers.get('Content-Type') || '').includes('application/json')) {
+      const data = await response.json();
+      const claimed = new Set(Array.isArray(data.claimed) ? data.claimed : []);
+      players = players.filter(p => !claimed.has(p.id)).concat((Array.isArray(data.players) ? data.players : []).filter(isPublic));
+    }
+  } catch { /* The static Pages backup keeps its original public roster. */ }
   const link = path => new URL(path, base).href;
   function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
   function card(p) {
     const index = players.findIndex(x => x.id === p.id);
-    const a = el('a', 'member-card'); a.href = link('players/' + p.id + '/'); a.dataset.role = p.role;
-    const art = el('div', 'member-card-visual'); art.setAttribute('aria-hidden', 'true');
+    const a = el('a', 'member-card'); a.href = link('player.html?id=' + encodeURIComponent(p.id)); a.dataset.role = p.role; a.dataset.theme = p.theme || 'gold';
+    const art = el('div', 'member-card-visual'); art.setAttribute('aria-hidden', 'true'); if (p.featured) { const image=el('img','member-character'); image.src=link('assets/game/'+(p.featured==='bloody-queen'?'bloody-queen':'mercenary')+'.png'); image.alt='';image.loading='lazy';art.append(image); }
     art.append(el('span', 'role-label', roleNames[p.role]), el('span', 'initial', Array.from(p.alias || p.nickname)[0]), el('span', 'card-index', String(index + 1).padStart(2, '0')));
     const content = el('div', 'member-card-content'); content.append(el('h3', '', p.nickname), el('p', 'member-alias', p.alias ? '队内网名 / ' + p.alias : roleNames[p.role]));
     const rank = el('p', 'card-rank'); rank.append(el('span', '', (p.role === 'hunter' ? '监管者' : '求生者') + ' · 历史最高'), document.createTextNode((p.role === 'hunter' ? p.hunterPeak : p.survivorPeak) || p.rank || '暂未公开')); content.append(rank);
@@ -77,7 +85,7 @@
     const p = players.find(p => p.id === id);
     if (p) {
       detail.replaceChildren(); document.title = p.nickname + ' · 队员档案 · HNUST 第五人格校队';
-      const index = players.findIndex(x => x.id === p.id), top = el('div', 'player-top'), visual = el('div', 'player-visual'); visual.dataset.role = p.role; visual.setAttribute('aria-hidden', 'true');
+      const index = players.findIndex(x => x.id === p.id), top = el('div', 'player-top'), visual = el('div', 'player-visual'); visual.dataset.role = p.role; visual.dataset.theme = p.theme || 'gold'; if (p.featured) { const image=el('img','member-character');image.src=link('assets/game/'+(p.featured==='bloody-queen'?'bloody-queen':'mercenary')+'.png');image.alt='角色立绘，作为主页视觉展示';visual.append(image); } visual.setAttribute('aria-hidden', 'true');
       visual.append(el('span', 'player-initial', Array.from(p.alias || p.nickname)[0]), el('span', 'player-tag', 'HNUST / IDENTITY V'), el('span', 'player-number', String(index + 1).padStart(2, '0')));
       const intro = el('div', 'player-intro'); intro.append(el('p', 'player-role', roleNames[p.role] + ' / PLAYER PROFILE'), el('h1', '', p.nickname)); if (p.alias) intro.append(el('p', 'player-alias', '队内网名 / ' + p.alias));
       const ranks = el('div', 'profile-ranks'); [['求生者 · 历史最高', p.survivorPeak], ['监管者 · 历史最高', p.hunterPeak]].forEach(([label, value]) => { const item = el('div'); item.append(el('small', '', label), el('strong', '', value || '暂未公开')); ranks.append(item); }); intro.append(ranks, el('p', 'historical-note', '历史段位按队员提供的资料展示，不代表当前赛季段位。')); if (p.intro) intro.append(el('p', '', p.intro)); top.append(visual, intro);
